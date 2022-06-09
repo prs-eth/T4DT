@@ -1,0 +1,8 @@
+0. make the meshes watertight
+1. create SDF fields 512^3 for the dataset
+2. create TSDF with reasonable threshold
+3. Share dataset
+4. TSDF -> TT
+5. Check out Temporal component
+6. Compare QTT with TT, Tucker
+7. Try learning, check out metrics

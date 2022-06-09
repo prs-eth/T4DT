@@ -1,0 +1,8 @@
+-r ../requirements.txt
+
+configargparse
+torch
+tntorch
+numpy
+trimesh
+tqdm
