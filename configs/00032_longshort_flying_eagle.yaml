@@ -1,0 +1,7 @@
+data_dir: /scratch2/data/cape_release
+output_dir: /scratch2/projects/tsdf/logs
+model: 00032
+scene: longshort_flying_eagle
+resolution: 512
+max_rank: 40
+experiment_name: tt_r40_00032_longshort_flying_eagle

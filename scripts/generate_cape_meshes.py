@@ -1,6 +1,8 @@
 import os
 import sys
 import os.path as osp
+import json
+
 
 sys.path.append('../')
 
@@ -18,11 +20,19 @@ for fname in os.listdir(osp.join(DATASET_DIR, 'seq_lists')):
         models[model] = set()
 
         with open(osp.join(DATASET_DIR, 'seq_lists', fname), 'r') as f:
+            # Note: skiping initial lines
             f.readline()
             f.readline()
             f.readline()
-            while f:
-                seq_name = f.readline().strip().split()[0]
-                models[model].add(seq_name)
 
-                cape.extract_mesh_seq(model, seq_name, option='posed')
+            for line in f:
+                try:
+                    seq_name = line.strip().split()[0]
+                    # cape.extract_mesh_seq(model, seq_name, option='posed')
+                    models[model].add(seq_name)
+                except:
+                    print(f'Failed to load model: {model}, sequence: {line}')
+
+
+with open('../info/models_sequences.json', 'w') as f:
+    json.dump({m: list(v) for m, v in models.items()}, f)
