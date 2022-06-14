@@ -36,7 +36,7 @@ if __name__ == '__main__':
     result = []
 
     error = 0
-    for i, frame in tqdm.tqdm(enumerate(frames)):
+    for frame in tqdm.tqdm(frames):
         sdf = torch.load(osp.join(args.data_dir, 'meshes', args.model, args.scene, 'posed', frame))['sdf']
         tsdf = sdf.clamp_min(MIN_TSDF)
         tsdf = sdf.clamp_max(MAX_TSDF)
