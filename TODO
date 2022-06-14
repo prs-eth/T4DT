@@ -1,4 +1,3 @@
-0. make the meshes watertight
 1. create SDF fields 512^3 for the dataset
 2. create TSDF with reasonable threshold
 3. Share dataset

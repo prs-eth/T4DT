@@ -5,16 +5,23 @@ import os
 import os.path as osp
 import tqdm
 
+MIN_TSDF = -1.
+MAX_TSDF = 1.
+
 if __name__ == '__main__':
     parser = configargparse.ArgumentParser(description='Compress the scene of SDFs with 4D TT decomposition')
     parser.add('-c', '--config', is_config_file=True, help='config file path')
+
     parser.add('--data_dir', required=True, type=str, help='Dirrectory with data')
+    parser.add('--experiment_name', required=True, type=str, help='Experiment name')
     parser.add('--output_dir', required=True, type=str, help='Dirrectory for output')
+
     parser.add('--model', required=True, type=str, help='Name of the model')
     parser.add('--scene', required=True, type=str, help='Name of the scene')
+
     parser.add('--resolution', required=True, type=int, help='Grid resolution')
     parser.add('--max_rank', required=True, type=int, help='Maximum rank')
-    parser.add('--experiment_name', required=True, type=str, help='Experiment name')
+    parser.add('--decomposition', required=True, choices=['TT', 'Tucker', 'QTT'], help='TT, Tucker or QTT')
 
     args = parser.parse_args()
 
@@ -31,9 +38,12 @@ if __name__ == '__main__':
     error = 0
     for i, frame in tqdm.tqdm(enumerate(frames)):
         sdf = torch.load(osp.join(args.data_dir, 'meshes', args.model, args.scene, 'posed', frame))['sdf']
-        tsdf = sdf.clamp_min(-1.)
-        tsdf = sdf.clamp_max(1.)
-        result.append(tn.Tensor(tsdf, ranks_tt=args.max_rank))
+        tsdf = sdf.clamp_min(MIN_TSDF)
+        tsdf = sdf.clamp_max(MAX_TSDF)
+        if args.decomposition == 'TT':
+            result.append(tn.Tensor(tsdf, ranks_tt=args.max_rank))
+        elif args.decomposition == 'Tucker':
+            result.append(tn.Tensor(tsdf, ranks_tucker=args.max_rank))
         # error += torch.norm(tsdf - result[-1].torch())
         # tqdm.tqdm.write(f'Error: {error.item() / (i + 1)}')
 
