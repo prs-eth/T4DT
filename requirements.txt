@@ -6,3 +6,4 @@ tntorch
 numpy
 trimesh
 tqdm
+pytorch3d

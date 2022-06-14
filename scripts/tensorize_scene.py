@@ -7,6 +7,7 @@ import tqdm
 
 MIN_TSDF = -1.
 MAX_TSDF = 1.
+EPS = 1e-3 # NOTE: used for Tucker
 
 if __name__ == '__main__':
     parser = configargparse.ArgumentParser(description='Compress the scene of SDFs with 4D TT decomposition')
@@ -44,8 +45,11 @@ if __name__ == '__main__':
             result.append(tn.Tensor(tsdf, ranks_tt=args.max_rank))
         elif args.decomposition == 'Tucker':
             result.append(tn.Tensor(tsdf, ranks_tucker=args.max_rank))
+        elif args.decomposition == 'QTT'
+            raise NotImplementedError()
         # error += torch.norm(tsdf - result[-1].torch())
         # tqdm.tqdm.write(f'Error: {error.item() / (i + 1)}')
 
+    result = tn.reduce([t[..., None] for t in result], tn.cat, rmax=rmax, eps=EPS, dim=-1)
     os.makedirs(args.output_dir, exist_ok=True)
     torch.save(result, osp.join(args.output_dir, args.experiment_name + '.pt'))
