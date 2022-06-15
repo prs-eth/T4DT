@@ -1,10 +1,10 @@
-1. create SDF fields 512^3 for the dataset - done for one scene
+1. create SDF fields 512^3 for the dataset - done for one scene, for more, probably, cluster is needed
 2. create TSDF with reasonable threshold - currently +- 1 is used
 3. Share dataset - ping aelphy if needed, pure SDFs are 512^3 and take 0.5GB per frame, TTs of one scene is about 1Gb with rank 40
 4. TSDF -> TT - experimenting with Tucker TT using tn.reduce
 5. Check out Temporal component - using TT part from 4 and we need to show that it makes sense to compress along temporal component.
 6. Compare QTT with TT, Tucker
-7. Metrics
+7. Metrics - MSDM2, SDCD, hausdorff
 8. Baseline
-9. rank / metrics sweep
+9. rank / metrics sweep - currently only rank 40 is used
 10. write the paper

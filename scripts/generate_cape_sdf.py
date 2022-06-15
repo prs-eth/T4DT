@@ -40,5 +40,3 @@ for model in tqdm.tqdm(os.listdir(osp.join(DATASET_DIR, 'meshes'))):
                 f = SDF(mesh.vertices, mesh.faces)
                 sdf = torch.tensor(f(coords).reshape(RES, RES, RES))
                 torch.save({'sdf': sdf, 'coords': scenes[scene]}, output_name)
-
-        break

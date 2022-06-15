@@ -4,6 +4,7 @@ configargparse
 torch
 tntorch
 numpy
-trimesh
 tqdm
-pytorch3d
+trimesh
+skimage
+git+https://github.com/NVIDIAGameWorks/kaolin@master#egg=kaolin
