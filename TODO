@@ -4,7 +4,7 @@
 4. TSDF -> TT - experimenting with Tucker TT using tn.reduce
 5. Check out Temporal component - using TT part from 4 and we need to show that it makes sense to compress along temporal component.
 6. Compare QTT with TT, Tucker
-7. Metrics - MSDM2, SDCD, hausdorff
+7. Metrics - MSDM2, hausdorff
 8. Baseline
 9. rank / metrics sweep - currently only rank 40 is used
 10. write the paper

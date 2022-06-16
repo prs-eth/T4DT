@@ -3,4 +3,4 @@ output_dir: /scratch2/projects/t4dt/metrics
 model: 00032
 scene: longshort_flying_eagle
 experiment_name: tt_tucker_r40_00032_longshort_flying_eagle_metrics
-compressed_scene_path: /scratch2/projects/t4dt/logs/tucker_r40_00032_longshort_flying_eagle.pt
+compressed_scene_path: /scratch2/projects/t4dt/logs/tt_tucker_r40_00032_longshort_flying_eagle.pt

@@ -9,13 +9,12 @@ import skimage
 import time
 import kaolin as kal
 
-sys.path.append('../')
-from t4dt.metrics import hausdorff, MSDM2, SDCD
+sys.path.append(osp.join(os.path.abspath(os.getcwd()), '..',))
+from t4dt.metrics import hausdorff, MSDM2
 
 MIN_TSDF = -1.
 MAX_TSDF = 1.
 NUM_SAMPLE_POINTS = 30000
-IOU_RESOLUTION = 64
 
 # NOTE: we use chamfer distance, L2, IoU
 parser = configargparse.ArgumentParser(description='Compress the scene of SDFs with 4D TT decomposition')
@@ -40,15 +39,12 @@ if len(frames) == 0:
     raise ValueError('SDF must be precomputed first')
 
 scene = torch.load(args.compressed_scene_path)
-# scene = [torch.load('/scratch2/data/cape_release/meshes/00032/longshort_flying_eagle/posed/sdf_watertight_longshort_flying_eagle.000001.pt')['sdf']]
-res = torch.tensor(scene[0].shape)
-# res = torch.tensor(scene.shape[:-1])
+res = torch.tensor(scene.shape[:-1])
 
-# assert len(frames) == scene.shape[-1], f'Number of frames must match, got {len(frames)} and {scene.shape[-1]}'
+assert len(frames) == scene.shape[-1], f'Number of frames must match, got {len(frames)} and {scene.shape[-1]}'
 
 for i in tqdm.tqdm(range(len(frames))):
-    # frame_pred = scene[..., i].torch()
-    frame_pred = scene[i].torch()
+    frame_pred = scene[..., i].torch()
     frame_pred.clamp_min_(MIN_TSDF)
     frame_pred.clamp_max_(MAX_TSDF)
 
@@ -69,10 +65,6 @@ for i in tqdm.tqdm(range(len(frames))):
     tqdm.tqdm.write(f'Marching cube finished. Took: {time.time() - t0} s.')
 
     mesh_pred = trimesh.base.Trimesh(vertices=verts, faces=faces)
-
-    # obj = trimesh.exchange.export.export_obj(mesh_pred, include_texture=False)
-    # with open('mesh.obj', 'w') as f:
-    #     f.write(obj)
 
     tqdm.tqdm.write('Sampling points started')
     t0 = time.time()
@@ -102,6 +94,11 @@ for i in tqdm.tqdm(range(len(frames))):
     del vg_pred
     del vg_gt
 
-    print(f'l2: {l2_error}, chamfer: {chamfer_distance_error}, IoU: {IoU}')
+    tqdm.tqdm.write('MSDM2 computation started')
+    t0 = time.time()
+    MSDM2_err = MSDM2(verts, faces, torch.tensor(mesh_gt.vertices), torch.tensor(mesh_gt.faces))
+    tqdm.tqdm.write(f'MSDM2 computation finished. Took: {time.time() - t0} s.')
+
+    print(f'l2: {l2_error}, chamfer_distance: {chamfer_distance_error}, IoU: {IoU}, MSDM2: {MSDM2_err}')
 
     break

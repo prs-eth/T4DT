@@ -4,12 +4,11 @@ import os.path as osp
 import json
 
 
-sys.path.append('../')
+sys.path.append(osp.join(os.path.abspath(os.getcwd()), '..',))
+from cape_utils import dataset_utils as du
 
 DATASET_DIR = '/scratch2/data/cape_release/'
 MESH_LIB = 'trimesh'
-
-from cape_utils import dataset_utils as du
 
 cape = du.CAPE_utils(MESH_LIB, DATASET_DIR)
 models = {}
