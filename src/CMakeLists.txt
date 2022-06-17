@@ -3,6 +3,10 @@ project(py_mepp2)
 
 set(BUILD_USE_OPENMESH FALSE)
 set(BUILD_USE_GUI FALSE)
+set(BUILD_EXAMPLES FALSE)
+set(BUILD_TESTS FALSE)
+
+add_definitions(-DCGAL_DISABLE_ROUNDING_MATH_CHECK)
 
 find_package(Eigen3 REQUIRED)
 

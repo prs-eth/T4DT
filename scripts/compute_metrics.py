@@ -96,7 +96,7 @@ for i in tqdm.tqdm(range(len(frames))):
 
     tqdm.tqdm.write('MSDM2 computation started')
     t0 = time.time()
-    MSDM2_err = MSDM2(verts, faces, torch.tensor(mesh_gt.vertices), torch.tensor(mesh_gt.faces))
+    MSDM2_err = MSDM2(torch.tensor(mesh_gt.vertices), torch.tensor(mesh_gt.faces), verts, faces)
     tqdm.tqdm.write(f'MSDM2 computation finished. Took: {time.time() - t0} s.')
 
     print(f'l2: {l2_error}, chamfer_distance: {chamfer_distance_error}, IoU: {IoU}, MSDM2: {MSDM2_err}')

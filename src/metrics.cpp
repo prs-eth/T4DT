@@ -8,14 +8,14 @@
 
 namespace py = pybind11;
 
-typedef Eigen::Matrix<long long, Eigen::Dynamic, 3, Eigen::RowMajor> MatrixX3i64;
+typedef Eigen::Matrix<long long, Eigen::Dynamic, 3, Eigen::RowMajor> MatrixX3i;
 typedef Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor> MatrixX3d;
 
 void populate_mesh(
         FEVV::MeshSurface &mesh,
         FEVV::PMapsContainer &pmaps_bag,
         Eigen::Ref<MatrixX3d> verts,
-        Eigen::Ref<MatrixX3i64> faces) {
+        Eigen::Ref<MatrixX3i> faces) {
     bool obj_file = true;
     unsigned int duplicated_vertices_nbr;
     FEVV::Filters::MeshFromVectorReprParameters< FEVV::MeshSurface > mfvr_params;
@@ -27,10 +27,18 @@ void populate_mesh(
                       long long > mvr;
     FEVV::Geometry_traits< FEVV::MeshSurface > gt(mesh);
 
-    mvr.points_coords.resize(verts.size());
-    MatrixX3d::Map(mvr.points_coords[0].data(), verts.rows(), verts.cols()) = verts;
-    mvr.faces_indices.resize(faces.size());
-    MatrixX3i64::Map(mvr.faces_indices[0].data(), faces.rows(), faces.cols()) = faces;
+    mvr.points_coords.resize(verts.rows(), std::vector<double>(verts.cols(), 0));
+    for(size_t i = 0; i < verts.rows(); ++i) {
+        for(size_t j = 0; j < verts.cols(); ++j) {
+            mvr.points_coords[i][j] = verts(i, j);
+        }
+    }
+    mvr.faces_indices.resize(faces.rows(), std::vector<long long>(faces.cols(), 0));
+    for(size_t i = 0; i < faces.rows(); ++i) {
+        for(size_t j = 0; j < faces.cols(); ++j) {
+            mvr.faces_indices[i][j] = faces(i, j);
+        }
+    }
 
     mesh_from_vector_representation(
         mesh,
@@ -43,11 +51,11 @@ void populate_mesh(
 
 double MSDM2_wrapper(
         Eigen::Ref<MatrixX3d> verts_a,
-        Eigen::Ref<MatrixX3i64> faces_a,
+        Eigen::Ref<MatrixX3i> faces_a,
         Eigen::Ref<MatrixX3d> verts_b,
-        Eigen::Ref<MatrixX3i64> faces_b) {
+        Eigen::Ref<MatrixX3i> faces_b) {
     double msdm2;
-    int nb_levels = 3;
+    int nb_levels = 1;
 
     FEVV::MeshSurface m_original;
     FEVV::PMapsContainer pmaps_bag_original;
