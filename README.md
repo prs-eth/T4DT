@@ -2,7 +2,7 @@
 
 Tenzorising 4D Visual Data (3D TSDFs + temporal component) for smaller footprint
 
-## Build C++ extensions for MSDM2, SDCD metrics
+## Build C++ extensions for MSDM2 metric
 ```
 cd src
 mkdir build

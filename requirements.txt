@@ -8,3 +8,4 @@ tqdm
 trimesh
 skimage
 git+https://github.com/NVIDIAGameWorks/kaolin@master#egg=kaolin
+git+https://github.com/libigl/libigl-python-bindings.git@master#egg=igl

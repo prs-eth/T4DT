@@ -94,11 +94,16 @@ for i in tqdm.tqdm(range(len(frames))):
     del vg_pred
     del vg_gt
 
+    tqdm.tqdm.write('hausdorff computation started')
+    t0 = time.time()
+    hausdorff = hausdorff(torch.tensor(mesh_gt.vertices), torch.tensor(mesh_gt.faces), verts, faces)
+    tqdm.tqdm.write(f'hausdorff computation finished. Took: {time.time() - t0} s.')
+
     tqdm.tqdm.write('MSDM2 computation started')
     t0 = time.time()
     MSDM2_err = MSDM2(torch.tensor(mesh_gt.vertices), torch.tensor(mesh_gt.faces), verts, faces)
     tqdm.tqdm.write(f'MSDM2 computation finished. Took: {time.time() - t0} s.')
 
-    print(f'l2: {l2_error}, chamfer_distance: {chamfer_distance_error}, IoU: {IoU}, MSDM2: {MSDM2_err}')
+    print(f'l2: {l2_error}, chamfer_distance: {chamfer_distance_error}, IoU: {IoU}, hausdorff: {hausdorff}, MSDM2: {MSDM2_err}')
 
     break
