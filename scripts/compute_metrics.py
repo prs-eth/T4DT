@@ -12,8 +12,8 @@ import kaolin as kal
 sys.path.append(osp.join(os.path.abspath(os.getcwd()), '..',))
 from t4dt.metrics import hausdorff, MSDM2
 
-MIN_TSDF = -1.
-MAX_TSDF = 1.
+MIN_TSDF = -0.05
+MAX_TSDF = 0.05
 NUM_SAMPLE_POINTS = 30000
 
 # NOTE: we use chamfer distance, L2, IoU
@@ -57,7 +57,7 @@ for i in tqdm.tqdm(range(len(frames))):
     tqdm.tqdm.write('Marching cube started')
     t0 = time.time()
     verts, faces, _, _ = skimage.measure.marching_cubes(
-        frame_pred.numpy(),
+        frame_pred.detach().numpy(),
         level=0.,
         spacing=(coords[3:] - coords[:3]) / res)
     verts = torch.tensor(verts.copy())
@@ -104,6 +104,6 @@ for i in tqdm.tqdm(range(len(frames))):
     MSDM2_err = MSDM2(torch.tensor(mesh_gt.vertices), torch.tensor(mesh_gt.faces), verts, faces)
     tqdm.tqdm.write(f'MSDM2 computation finished. Took: {time.time() - t0} s.')
 
-    print(f'l2: {l2_error}, chamfer_distance: {chamfer_distance_error}, IoU: {IoU}, hausdorff: {hausdorff}, MSDM2: {MSDM2_err}')
+    print(f'l2: {l2_error}, chamfer_distance: {chamfer_distance_error}, IoU: {IoU[0]}, hausdorff: {hausdorff}, MSDM2: {MSDM2_err}')
 
     break
