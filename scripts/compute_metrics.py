@@ -16,7 +16,6 @@ MIN_TSDF = -0.05
 MAX_TSDF = 0.05
 NUM_SAMPLE_POINTS = 30000
 
-# NOTE: we use chamfer distance, L2, IoU
 parser = configargparse.ArgumentParser(description='Compress the scene of SDFs with 4D TT decomposition')
 parser.add('-c', '--config', is_config_file=True, help='config file path')
 
@@ -96,7 +95,7 @@ for i in tqdm.tqdm(range(len(frames))):
 
     tqdm.tqdm.write('hausdorff computation started')
     t0 = time.time()
-    hausdorff = hausdorff(torch.tensor(mesh_gt.vertices), torch.tensor(mesh_gt.faces), verts, faces)
+    hausdorff_dist = hausdorff(torch.tensor(mesh_gt.vertices), torch.tensor(mesh_gt.faces), verts, faces)
     tqdm.tqdm.write(f'hausdorff computation finished. Took: {time.time() - t0} s.')
 
     tqdm.tqdm.write('MSDM2 computation started')
@@ -104,6 +103,6 @@ for i in tqdm.tqdm(range(len(frames))):
     MSDM2_err = MSDM2(torch.tensor(mesh_gt.vertices), torch.tensor(mesh_gt.faces), verts, faces)
     tqdm.tqdm.write(f'MSDM2 computation finished. Took: {time.time() - t0} s.')
 
-    print(f'l2: {l2_error}, chamfer_distance: {chamfer_distance_error}, IoU: {IoU[0]}, hausdorff: {hausdorff}, MSDM2: {MSDM2_err}')
+    print(f'l2: {l2_error}, chamfer_distance: {chamfer_distance_error}, IoU: {IoU[0]}, hausdorff: {hausdorff_dist}, MSDM2: {MSDM2_err}')
 
     break

@@ -1,0 +1,7 @@
+data_dir: /scratch2/data/cape_release
+output_dir: /scratch2/projects/t4dt/logs/sweeps
+model: 00032
+scene: longshort_flying_eagle
+experiment_name: tt_tucker_00032_longshort_flying_eagle_ranks
+decomposition: TT-Tucker
+num_sample_points: 30000
