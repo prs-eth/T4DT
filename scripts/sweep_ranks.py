@@ -42,6 +42,7 @@ for min_tsdf, max_tsdf in [(-0.5, 0.5), (-0.05, 0.05), (-0.01, 0.01), (-0.005, 0
     result[(min_tsdf, max_tsdf)] = {}
 
     for tucker_rank in [20, 50, 100]:
+        result[(min_tsdf, max_tsdf)][tucker_rank] = {}
         local_res = []
 
         for frame in tqdm.tqdm(frames):

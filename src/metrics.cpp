@@ -55,7 +55,7 @@ double MSDM2_wrapper(
         Eigen::Ref<MatrixX3d> verts_b,
         Eigen::Ref<MatrixX3i> faces_b) {
     double msdm2;
-    int nb_levels = 1;
+    int nb_levels = 3;
 
     FEVV::MeshSurface m_original;
     FEVV::PMapsContainer pmaps_bag_original;
