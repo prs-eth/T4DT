@@ -1,0 +1,10 @@
+data_dir: /scratch2/data/cape_release
+output_dir: /scratch2/projects/t4dt/logs/sweeps
+model: '00032'
+scene: longshort_flying_eagle
+experiment_name: tt_tucker_00032_longshort_flying_eagle_very_low_ranks
+decomposition: TT-Tucker
+num_sample_points: 30000
+trunc_values: '[(-0.005, 0.0005), (-0.0005, 0.005)]'
+tucker_ranks: [50]
+tt_ranks: [4]

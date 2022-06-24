@@ -48,6 +48,7 @@ def compute_metrics(
     res = torch.tensor(compressed_scene.shape[:-1])
     result = {}
     for i in tqdm.tqdm(sample_frames):
+        result[i] = {}
         frame_pred = compressed_scene[..., i].torch()
         frame_pred.clamp_min_(min_tsdf)
         frame_pred.clamp_max_(max_tsdf)
@@ -69,16 +70,16 @@ def compute_metrics(
 
         tqdm.tqdm.write('Marching cube started')
         t0 = time.time()
-        verts, faces, _, _ = skimage.measure.marching_cubes(
+        verts1, faces1, _, _ = skimage.measure.marching_cubes(
             sdf.detach().numpy(),
             level=0.,
             spacing=(coords[3:] - coords[:3]) / res)
-        verts = torch.tensor(verts.copy())
-        faces = torch.tensor(faces.copy())
+        verts1 = torch.tensor(verts1.copy())
+        faces1 = torch.tensor(faces1.copy())
         tqdm.tqdm.write(f'Marching cube finished. Took: {time.time() - t0} s.')
 
-        for j, mesh_gt in enumerate([trimesh.base.Trimesh(vertices=verts, faces=faces), trimesh.load(frames[i][1])]):
-            result[j] = {}
+        for j, mesh_gt in enumerate([trimesh.base.Trimesh(vertices=verts1, faces=faces1), trimesh.load(frames[i][1])]):
+            result[i][j] = {}
             tqdm.tqdm.write('Sampling points started')
             t0 = time.time()
             points_gt, _ = trimesh.sample.sample_surface(mesh_gt, num_sample_points)
@@ -88,7 +89,7 @@ def compute_metrics(
             points_gt = torch.tensor(points_gt[None]).cuda()
             points_pred = torch.tensor(points_pred[None]).cuda()
 
-            chamfer_distance_error = kal.metrics.pointcloud.chamfer_distance(points_gt, points_pred)[0]
+            chamfer_distance_error = kal.metrics.pointcloud.chamfer_distance(points_gt, points_pred)[0].detach().cpu()
             del points_gt
             del points_pred
 
@@ -116,7 +117,7 @@ def compute_metrics(
             t0 = time.time()
             MSDM2_err = MSDM2(torch.tensor(mesh_gt.vertices), torch.tensor(mesh_gt.faces), verts, faces)
             tqdm.tqdm.write(f'MSDM2 computation finished. Took: {time.time() - t0} s.')
-            result[j][i] = {
+            result[i][j] = {
                 'l2': l2_error,
                 'chamfer_distance': chamfer_distance_error,
                 'IoU': IoU[0],

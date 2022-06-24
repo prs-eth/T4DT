@@ -6,6 +6,7 @@ import os.path as osp
 import sys
 import tqdm
 import tntorch as tn
+import yaml
 
 sys.path.append(osp.join(os.path.abspath(os.getcwd()), '..',))
 from t4dt.t4dt import reduce_tucker
@@ -13,8 +14,11 @@ from t4dt.metrics import compute_metrics
 
 EPS = 1e-9 # NOTE: used for TT
 
-parser = configargparse.ArgumentParser(description='Compress the scene of SDFs with 4D TT decomposition')
+parser = configargparse.ArgumentParser(
+    config_file_parser_class=configargparse.YAMLConfigFileParser,
+    description='Compress the scene of SDFs with 4D TT decomposition')
 parser.add('-c', '--config', is_config_file=True, help='config file path')
+
 
 parser.add('--data_dir', required=True, type=str, help='Dirrectory with data')
 parser.add('--experiment_name', required=True, type=str, help='Experiment name')
@@ -25,6 +29,10 @@ parser.add('--scene', required=True, type=str, help='Name of the scene')
 
 parser.add('--decomposition', required=True, choices=['TT', 'QTT', 'TT-Tucker'], help='TT, TT-Tucker or QTT')
 parser.add('--num_sample_points', required=True, type=int, help='Number of points to compute IoU')
+
+parser.add_argument('--trunc_values', type=eval, help='SDF limits for a sweep')
+parser.add_argument('--tucker_ranks', type=int, nargs='+', help='Tucker ranks for a sweep')
+parser.add_argument('--tt_ranks', type=int, nargs='+', help='TT ranks for a sweep')
 
 args = parser.parse_args()
 
@@ -38,10 +46,11 @@ if len(frames) == 0:
 
 result = {}
 
-for min_tsdf, max_tsdf in [(-0.5, 0.5), (-0.05, 0.05), (-0.01, 0.01), (-0.005, 0.005)]:
+for min_tsdf, max_tsdf in args.trunc_values:
+    print(f'tsdf limits ({min_tsdf}:{max_tsdf})')
     result[(min_tsdf, max_tsdf)] = {}
 
-    for tucker_rank in [20, 50, 100]:
+    for tucker_rank in reversed(sorted(args.tucker_ranks)):
         result[(min_tsdf, max_tsdf)][tucker_rank] = {}
         local_res = []
 
@@ -65,10 +74,10 @@ for min_tsdf, max_tsdf in [(-0.5, 0.5), (-0.05, 0.05), (-0.01, 0.01), (-0.005, 0
             raise NotImplementedError()
 
         local_res_tt = local_res_tucker.clone()
-        for tt_rank in [1024, 512, 128]:
+        for tt_rank in reversed(sorted(args.tt_ranks)):
             local_res_tt.round_tt(rmax=tt_rank)
             result[(min_tsdf, max_tsdf)][tucker_rank][tt_rank] = {
-                'tensor': local_res_tt,
+                'tensor': local_res_tt.clone(),
                 'metrics': compute_metrics(
                     [(osp.join(args.data_dir, 'meshes', args.model, args.scene, 'posed', frame),
                       osp.join(args.data_dir, 'meshes', args.model, args.scene, 'posed', frame[4:-2] + 'obj'))
@@ -77,7 +86,6 @@ for min_tsdf, max_tsdf in [(-0.5, 0.5), (-0.05, 0.05), (-0.01, 0.01), (-0.005, 0
                     min_tsdf, max_tsdf,
                     args.num_sample_points,
                     [0, len(frames) // 2, len(frames) - 1])} # NOTE: sample first, middle and last frames
-
 
 os.makedirs(args.output_dir, exist_ok=True)
 torch.save(result, osp.join(args.output_dir, f'{args.experiment_name}.pt'))
