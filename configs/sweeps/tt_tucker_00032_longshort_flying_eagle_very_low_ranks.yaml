@@ -6,5 +6,5 @@ experiment_name: tt_tucker_00032_longshort_flying_eagle_very_low_ranks
 decomposition: TT-Tucker
 num_sample_points: 30000
 trunc_values: '[(-0.005, 0.0005), (-0.0005, 0.005)]'
-tucker_ranks: [50]
+max_ranks: [50]
 tt_ranks: [4]

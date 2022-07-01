@@ -10,11 +10,11 @@ import trimesh
 import tqdm
 import kaolin as kal
 import tntorch as tn
-from typing import List
+from typing import List, Callable
 
 sys.path.append(osp.join(osp.abspath(os.getcwd()), '..', 'src', 'build'))
-sys.path.append(osp.join(osp.abspath(os.getcwd()), '.'))
-from utils import sdf2mesh
+sys.path.append(osp.join(os.path.abspath(os.getcwd()), '..',))
+from t4dt.utils import sdf2mesh
 
 try:
     import py_mepp2
@@ -41,6 +41,7 @@ def MSDM2(verts_a: torch.Tensor, faces_a: torch.Tensor, verts_b: torch.Tensor, f
 def compute_metrics(
         frames: List[str],
         compressed_scene: tn.Tensor,
+        preprocessing_fn: Callable,
         min_tsdf: float,
         max_tsdf: float,
         num_sample_points: int,
@@ -51,7 +52,7 @@ def compute_metrics(
     result = {}
     for i in tqdm.tqdm(sample_frames):
         result[i] = {}
-        frame_pred = compressed_scene[..., i].torch()
+        frame_pred = preprocessing_fn(compressed_scene[..., i])
         frame_pred.clamp_min_(min_tsdf)
         frame_pred.clamp_max_(max_tsdf)
 
@@ -86,7 +87,10 @@ def compute_metrics(
 
         tqdm.tqdm.write('Voxelgrid conversion started')
         t0 = time.time()
-        vg_pred = kal.ops.conversions.trianglemeshes_to_voxelgrids(verts[None], faces, res.max().item())
+        vg_pred = kal.ops.conversions.trianglemeshes_to_voxelgrids(
+            torch.tensor(mesh_pred.vertices[None]),
+            torch.tensor(mesh_pred.faces),
+            res.max().item())
         vg_gt = kal.ops.conversions.trianglemeshes_to_voxelgrids(
             torch.tensor(mesh_gt.vertices[None]),
             torch.tensor(mesh_gt.faces),
@@ -99,12 +103,16 @@ def compute_metrics(
 
         tqdm.tqdm.write('hausdorff computation started')
         t0 = time.time()
-        hausdorff_dist = hausdorff(torch.tensor(mesh_gt.vertices), torch.tensor(mesh_gt.faces), verts, faces)
+        hausdorff_dist = hausdorff(
+            torch.tensor(mesh_gt.vertices), torch.tensor(mesh_gt.faces),
+            torch.tensor(mesh_pred.vertices), torch.tensor(mesh_pred.faces))
         tqdm.tqdm.write(f'hausdorff computation finished. Took: {time.time() - t0} s.')
 
         tqdm.tqdm.write('MSDM2 computation started')
         t0 = time.time()
-        MSDM2_err = MSDM2(torch.tensor(mesh_gt.vertices), torch.tensor(mesh_gt.faces), verts, faces)
+        MSDM2_err = MSDM2(
+            torch.tensor(mesh_gt.vertices), torch.tensor(mesh_gt.faces),
+            torch.tensor(mesh_pred.vertices), torch.tensor(mesh_pred.faces))
         tqdm.tqdm.write(f'MSDM2 computation finished. Took: {time.time() - t0} s.')
         result[i] = {
             'l2': l2_error,

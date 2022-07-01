@@ -9,7 +9,7 @@ import tntorch as tn
 import yaml
 
 sys.path.append(osp.join(os.path.abspath(os.getcwd()), '..',))
-from t4dt.t4dt import reduce_tucker
+from t4dt.t4dt import reduce_tucker, tensor3d2qtt, qtt2tensor3d, qtt_stack
 from t4dt.metrics import compute_metrics
 
 EPS = 1e-9 # NOTE: used for TT
@@ -31,7 +31,7 @@ parser.add('--decomposition', required=True, choices=['TT', 'QTT', 'TT-Tucker'],
 parser.add('--num_sample_points', required=True, type=int, help='Number of points to compute IoU')
 
 parser.add_argument('--trunc_values', type=eval, help='SDF limits for a sweep')
-parser.add_argument('--tucker_ranks', type=int, nargs='+', help='Tucker ranks for a sweep')
+parser.add_argument('--max_inner_ranks', type=int, nargs='+', help='Tucker ranks for a sweep')
 parser.add_argument('--tt_ranks', type=int, nargs='+', help='TT ranks for a sweep')
 
 args = parser.parse_args()
@@ -50,39 +50,46 @@ for min_tsdf, max_tsdf in args.trunc_values:
     print(f'tsdf limits ({min_tsdf}:{max_tsdf})')
     result[(min_tsdf, max_tsdf)] = {}
 
-    for tucker_rank in reversed(sorted(args.tucker_ranks)):
-        result[(min_tsdf, max_tsdf)][tucker_rank] = {}
+    for max_rank in reversed(sorted(args.max_inner_ranks)):
+        result[(min_tsdf, max_tsdf)][max_rank] = {}
         local_res = []
 
         for frame in tqdm.tqdm(frames):
             sdf = torch.load(osp.join(args.data_dir, 'meshes', args.model, args.scene, 'posed', frame))['sdf']
             tsdf = sdf.clamp_min(min_tsdf).clamp_max(max_tsdf)
             if args.decomposition == 'TT':
-                local_res.append(tn.Tensor(tsdf, ranks_tt=tucker_rank))
+                local_res.append(tn.Tensor(tsdf, ranks_tt=max_rank))
             elif args.decomposition in ['Tucker', 'TT-Tucker']:
-                local_res.append(tn.Tensor(tsdf, ranks_tucker=tucker_rank))
+                local_res.append(tn.Tensor(tsdf, ranks_tucker=max_rank))
             elif args.decomposition == 'QTT':
-                raise NotImplementedError()
+                local_res.append(tn.Tensor(tensor3d2qtt(tsdf), ranks_tt=max_rank))
 
         if args.decomposition == 'TT-Tucker':
-            local_res_tucker = reduce_tucker(
+            local_res_decomp = reduce_tucker(
                 [t[..., None] for t in local_res],
-                eps=EPS, rmax=tucker_rank, algorithm='svd')
+                eps=EPS, rmax=max_rank, algorithm='svd')
+            preprocessing_fn = lambda x: x.torch()
         elif args.decomposition == 'TT':
             raise NotImplementedError()
         elif args.decomposition == 'QTT':
-            raise NotImplementedError()
+            local_res_decomp = qtt_stack([t[..., None] for t in local_res], rmax=max_rank)
+            preprocessing_fn = lambda x: qtt2tensor3d(x.torch())
 
-        local_res_tt = local_res_tucker.clone()
+        # torch.save(local_res_decomp, osp.join(args.output_dir, f'{args.experiment_name}.pt'))
+        result[(min_tsdf, max_tsdf)][max_rank]['tuckers'] = local_res
+        local_res_tt = local_res_decomp.clone()
+        ranks_tt = local_res_tt.ranks_tt
         for tt_rank in reversed(sorted(args.tt_ranks)):
-            local_res_tt.round_tt(rmax=tt_rank)
-            result[(min_tsdf, max_tsdf)][tucker_rank][tt_rank] = {
+            ranks_tt[-2] = tt_rank
+            local_res_tt.round_tt(rmax=ranks_tt[1:-1])
+            result[(min_tsdf, max_tsdf)][max_rank][tt_rank] = {
                 'tensor': local_res_tt.clone(),
                 'metrics': compute_metrics(
                     [(osp.join(args.data_dir, 'meshes', args.model, args.scene, 'posed', frame),
                       osp.join(args.data_dir, 'meshes', args.model, args.scene, 'posed', frame[4:-2] + 'obj'))
                      for frame in frames],
                     local_res_tt,
+                    preprocessing_fn,
                     min_tsdf, max_tsdf,
                     args.num_sample_points,
                     [0, len(frames) // 2, len(frames) - 1])} # NOTE: sample first, middle and last frames

@@ -4,7 +4,7 @@ import trimesh
 
 def sdf2mesh(sdf: torch.Tensor, coords: torch.Tensor, res: int):
     vertices, faces, _, _ = skimage.measure.marching_cubes(
-    tsdf.detach().cpu().numpy(),
+    sdf.detach().cpu().numpy(),
     level=0.,
     spacing=(coords[3:] - coords[:3]) / res)
 

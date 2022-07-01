@@ -3,6 +3,6 @@ output_dir: /scratch2/projects/t4dt/logs
 model: 00032
 scene: longshort_flying_eagle
 resolution: 512
-max_rank: 40
+max_inner_ranks: 40
 experiment_name: tt_tucker_r40_00032_longshort_flying_eagle
 decomposition: TT-Tucker

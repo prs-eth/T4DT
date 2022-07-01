@@ -1,7 +1,6 @@
 1. create SDF fields 512^3 for the dataset - done for one scene, for more, probably, cluster is needed
-2. create TSDF with reasonable threshold - currently +- 1 is used
-3. Share dataset - ping aelphy if needed, pure SDFs are 512^3 and take 0.5GB per frame, TTs of one scene is about 1Gb with rank 40
+2. create TSDF with reasonable threshold - currently +- 1, is used. Upd 28.06.2022: asymmetric thrs are bad. Tried +- 0.5, 0.05, 0.01, 0.005
+3. Share dataset - ping @aelphy if needed, pure SDFs are 512^3 and take 0.5GB per frame, TTs of one scene is about 1Gb with rank 40
 4. Compare QTT with TT, Tucker
 5. Baseline
-6. rank / metrics sweep - currently only rank 40 is used
-7. write the paper
+6. write the paper
