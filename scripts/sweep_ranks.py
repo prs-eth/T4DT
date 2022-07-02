@@ -9,7 +9,7 @@ import tntorch as tn
 import yaml
 
 sys.path.append(osp.join(os.path.abspath(os.getcwd()), '..',))
-from t4dt.t4dt import reduce_tucker, tensor3d2qtt, qtt2tensor3d, qtt_stack
+from t4dt.t4dt import reduce_tucker, tensor3d2qtt, qtt2tensor3d, qtt_stack, get_qtt_frame
 from t4dt.metrics import compute_metrics
 
 EPS = 1e-9 # NOTE: used for TT
@@ -68,14 +68,13 @@ for min_tsdf, max_tsdf in args.trunc_values:
             local_res_decomp = reduce_tucker(
                 [t[..., None] for t in local_res],
                 eps=EPS, rmax=max_rank, algorithm='svd')
-            preprocessing_fn = lambda x: x.torch()
+            preprocessing_fn = lambda x, i: x[..., i].torch()
         elif args.decomposition == 'TT':
             raise NotImplementedError()
         elif args.decomposition == 'QTT':
-            local_res_decomp = qtt_stack([t[..., None] for t in local_res], rmax=max_rank)
-            preprocessing_fn = lambda x: qtt2tensor3d(x.torch())
+            local_res_decomp = qtt_stack(local_res, rmax=max_rank)
+            preprocessing_fn = lambda x, i: qtt2tensor3d(get_qtt_frame(x, i).torch())
 
-        # torch.save(local_res_decomp, osp.join(args.output_dir, f'{args.experiment_name}.pt'))
         result[(min_tsdf, max_tsdf)][max_rank]['tuckers'] = local_res
         local_res_tt = local_res_decomp.clone()
         ranks_tt = local_res_tt.ranks_tt

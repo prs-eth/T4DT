@@ -6,5 +6,5 @@ experiment_name: qtt_00032_longshort_flying_eagle_high_ranks
 decomposition: QTT
 num_sample_points: 30000
 trunc_values: '[(-0.005, 0.005)]'
-max_inner_ranks: [100]
-tt_ranks: [284]
+max_inner_ranks: [400]
+tt_ranks: [400]

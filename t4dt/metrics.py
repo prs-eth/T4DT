@@ -52,7 +52,7 @@ def compute_metrics(
     result = {}
     for i in tqdm.tqdm(sample_frames):
         result[i] = {}
-        frame_pred = preprocessing_fn(compressed_scene[..., i])
+        frame_pred = preprocessing_fn(compressed_scene, i)
         frame_pred.clamp_min_(min_tsdf)
         frame_pred.clamp_max_(max_tsdf)
 

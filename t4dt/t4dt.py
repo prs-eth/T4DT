@@ -2,6 +2,7 @@ import torch
 import tntorch as tn
 import numpy as np
 import itertools
+import operator
 
 
 def reduce_tucker(ts, eps, rmax, algorithm):
@@ -76,14 +77,25 @@ def qtt_stack(ts, N=3, rmax=50):
     assert int(np.ceil(np.log2(len(ts)))) <= L
 
     # NOTE: Pad with zero tensors to make sure time size is 2^L
-    ts = ts + [tn.zeros_like(ts[0]) for i in range(2**L-len(ts))]
+    ts = ts + [tn.zeros_like(ts[0]) for i in range(2**L - len(ts))]
 
     output_ts = []
     for i in range(len(ts)):
-        t = tn.unsqueeze(ts[i], dim=range(N, (L + 1) * N, N + 1))
+        t = tn.unsqueeze(ts[i], dim=range(N, L * (N + 1) + 1, N + 1))
         t = t.repeat(*([1] * N + [2]) * L)
         # NOTE: We will put least-signficant bits towards the right
         for l in range(L):
             t.cores[(l + 1) * (N + 1) - 1][:, int((i & (1 << l)) == 0), :] = 0
         output_ts.append(t)
     return tn.reduce(output_ts, operator.add, rmax=rmax)
+
+
+def get_qtt_frame(qtt_scene: tn.Tensor, frame: int, N: int = 3):
+    idxs = []
+    for i in range(qtt_scene.dim()):
+        if (i + 1) % (N + 1) == 0:
+            idxs.append(frame)
+        else:
+            idxs.append(slice(None))
+
+    return qtt_scene[idxs]
