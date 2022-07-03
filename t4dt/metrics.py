@@ -46,9 +46,7 @@ def compute_metrics(
         max_tsdf: float,
         num_sample_points: int,
         sample_frames: List[int]):
-    assert compressed_scene.shape[-1] == len(frames)
-
-    res = torch.tensor(compressed_scene.shape[:-1])
+    res = torch.tensor(preprocessing_fn(compressed_scene, 0).shape)
     result = {}
     for i in tqdm.tqdm(sample_frames):
         result[i] = {}

@@ -6,6 +6,6 @@ tntorch
 numpy
 tqdm
 trimesh
-skimage
+scikit-image
 git+https://github.com/NVIDIAGameWorks/kaolin@master#egg=kaolin
 git+https://github.com/libigl/libigl-python-bindings.git@master#egg=igl

@@ -36,6 +36,10 @@ for model in tqdm.tqdm(os.listdir(osp.join(DATASET_DIR, 'meshes'))):
             if not frame.startswith('sdf_watertight_') and frame.startswith('watertight_'):
                 input_name = osp.join(DATASET_DIR, 'meshes', model, scene, 'posed', frame)
                 output_name = osp.join(DATASET_DIR, 'meshes', model, scene, 'posed', 'sdf_' + frame[:-4] + '.pt')
+
+                if osp.exists(output_name):
+                    continue
+
                 mesh = trimesh.load(input_name)
                 f = SDF(mesh.vertices, mesh.faces)
                 sdf = torch.tensor(f(coords).reshape(RES, RES, RES))
