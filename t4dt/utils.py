@@ -10,4 +10,4 @@ def sdf2mesh(sdf: torch.Tensor, coords: torch.Tensor, res: int):
 
     vertices = torch.tensor(vertices.copy())
     faces = torch.tensor(faces.copy())
-    return trimesh.base.Trimesh(vertices=vertices, faces=faces)
+    return trimesh.base.Trimesh(vertices=vertices, faces=faces, process=True)

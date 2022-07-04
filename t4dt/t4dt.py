@@ -5,19 +5,19 @@ import itertools
 import operator
 
 
-def reduce_tucker(ts, eps, rmax, algorithm):
+def reduce_tucker(ts, eps, algorithm):
     d = dict()
     for i, elem in enumerate(ts):
         climb = 0  # For going up the tree
         while climb in d:
-            elem = tn.round_tucker(tn.cat([d[climb], elem], dim=-1), eps=eps, rmax=rmax, algorithm=algorithm)
+            elem = tn.round_tucker(tn.cat([d[climb], elem], dim=-1), eps=eps, algorithm=algorithm)
             d.pop(climb)
             climb += 1
         d[climb] = elem
     keys = list(d.keys())
     result = d[keys[0]]
     for key in keys[1:]:
-        result = tn.round_tucker(tn.cat([result, d[key]], dim=-1), eps=eps, rmax=rmax, algorithm=algorithm)
+        result = tn.round_tucker(tn.cat([result, d[key]], dim=-1), eps=eps, algorithm=algorithm)
     return result
 
 
@@ -61,7 +61,7 @@ def qtt2tensor3d(qtt: torch.Tensor, checks: bool = True) -> torch.Tensor:
     return t.reshape([dim_grid] * 3)
 
 
-def qtt_stack(ts, N=3, rmax=50):
+def qtt_stack(ts, N=3, eps=1e-14):
     '''
     Given a list of K tensors (shape (2^L)^N each) represented in the QTT format (shape 2^(N * L)),
     stack them along a new dimension that is interleaved with their original dimensions.
@@ -87,7 +87,7 @@ def qtt_stack(ts, N=3, rmax=50):
         for l in range(L):
             t.cores[(l + 1) * (N + 1) - 1][:, int((i & (1 << l)) == 0), :] = 0
         output_ts.append(t)
-    return tn.reduce(output_ts, operator.add, rmax=rmax)
+    return tn.reduce(output_ts, operator.add, eps=eps)
 
 
 def get_qtt_frame(qtt_scene: tn.Tensor, frame: int, N: int = 3):

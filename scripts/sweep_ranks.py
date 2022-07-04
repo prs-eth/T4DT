@@ -67,12 +67,12 @@ for min_tsdf, max_tsdf in args.trunc_values:
         if args.decomposition == 'TT-Tucker':
             local_res_decomp = reduce_tucker(
                 [t[..., None] for t in local_res],
-                eps=EPS, rmax=max_rank, algorithm='svd')
+                eps=EPS, algorithm='svd')
             preprocessing_fn = lambda x, i: x[..., i].torch()
         elif args.decomposition == 'TT':
             raise NotImplementedError()
         elif args.decomposition == 'QTT':
-            local_res_decomp = qtt_stack(local_res, rmax=max_rank)
+            local_res_decomp = qtt_stack(local_res, eps=EPS)
             preprocessing_fn = lambda x, i: qtt2tensor3d(get_qtt_frame(x, i).torch())
 
         result[(min_tsdf, max_tsdf)][max_rank]['tuckers'] = local_res
