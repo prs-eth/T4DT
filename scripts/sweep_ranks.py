@@ -12,7 +12,7 @@ sys.path.append(osp.join(os.path.abspath(os.getcwd()), '..',))
 from t4dt.t4dt import reduce_tucker, tensor3d2qtt, qtt2tensor3d, qtt_stack, get_qtt_frame
 from t4dt.metrics import compute_metrics
 
-EPS = 1e-9 # NOTE: used for TT
+EPS = 1e-5 # NOTE: used for TT
 
 parser = configargparse.ArgumentParser(
     config_file_parser_class=configargparse.YAMLConfigFileParser,
@@ -75,7 +75,7 @@ for min_tsdf, max_tsdf in args.trunc_values:
             local_res_decomp = qtt_stack(local_res, eps=EPS)
             preprocessing_fn = lambda x, i: qtt2tensor3d(get_qtt_frame(x, i).torch())
 
-        result[(min_tsdf, max_tsdf)][max_rank]['tuckers'] = local_res
+        result[(min_tsdf, max_tsdf)][max_rank]['compressed_frames'] = local_res
         local_res_tt = local_res_decomp.clone()
         ranks_tt = local_res_tt.ranks_tt
         for tt_rank in reversed(sorted(args.tt_ranks)):

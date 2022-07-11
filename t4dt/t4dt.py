@@ -3,6 +3,8 @@ import tntorch as tn
 import numpy as np
 import itertools
 import operator
+from typing import Callable, List, Optional
+from functools import partial
 
 
 def reduce_tucker(ts, eps, algorithm):
@@ -18,6 +20,27 @@ def reduce_tucker(ts, eps, algorithm):
     result = d[keys[0]]
     for key in keys[1:]:
         result = tn.round_tucker(tn.cat([result, d[key]], dim=-1), eps=eps, algorithm=algorithm)
+    return result
+
+
+def reduce_tt(
+        ts: List[tn.Tensor],
+        function: Callable = partial(tn.cat, dim=-1),
+        eps: float = 1e-14,
+        rank: Optional[int] = None,
+        algorithm: str = 'svd'):
+    d = dict()
+    for i, elem in enumerate(ts):
+        climb = 0  # For going up the tree
+        while climb in d:
+            elem = tn.round_tt(function(d[climb], elem), rmax=rank, eps=eps, algorithm=algorithm)
+            d.pop(climb)
+            climb += 1
+        d[climb] = elem
+    keys = list(d.keys())
+    result = d[keys[0]]
+    for key in keys[1:]:
+        result = tn.round_tt(function(result, d[key]), rmax=rank, eps=eps, algorithm=algorithm)
     return result
 
 
@@ -61,7 +84,12 @@ def qtt2tensor3d(qtt: torch.Tensor, checks: bool = True) -> torch.Tensor:
     return t.reshape([dim_grid] * 3)
 
 
-def qtt_stack(ts, N=3, eps=1e-14):
+def qtt_stack(
+    ts: List[tn.Tensor],
+    N: int = 3,
+    eps: Optional[float] = None,
+    rank: Optional[int] = None,
+    algorithm: str = 'svd'):
     '''
     Given a list of K tensors (shape (2^L)^N each) represented in the QTT format (shape 2^(N * L)),
     stack them along a new dimension that is interleaved with their original dimensions.
@@ -69,6 +97,7 @@ def qtt_stack(ts, N=3, eps=1e-14):
     :param ts: list of QTT's (`tntorch.Tensor`), each of shape 2^(N * L)
     :param N: number of spatial dimensions (default is 3)
     :param rmax: maximal rank of the stacked result
+    :param algorithm: eig or svd (default)
     :return: a `tntorch.Tensor` of shape 2^((N + 1) * L)
     '''
     assert all([t.shape == ts[0].shape for t in ts[1:]])
@@ -83,18 +112,21 @@ def qtt_stack(ts, N=3, eps=1e-14):
     for i in range(len(ts)):
         t = tn.unsqueeze(ts[i], dim=range(N, L * (N + 1) + 1, N + 1))
         t = t.repeat(*([1] * N + [2]) * L)
-        # NOTE: We will put least-signficant bits towards the right
+        # NOTE: We will put least-signficant bits towards the left
         for l in range(L):
             t.cores[(l + 1) * (N + 1) - 1][:, int((i & (1 << l)) == 0), :] = 0
         output_ts.append(t)
-    return tn.reduce(output_ts, operator.add, eps=eps)
+    return reduce_tt(output_ts, operator.add, eps=eps, rank=rank, algorithm=algorithm)
 
 
 def get_qtt_frame(qtt_scene: tn.Tensor, frame: int, N: int = 3):
     idxs = []
+    frame_bits = np.binary_repr(frame, qtt_scene.dim() // (N + 1))
+    bit_index = 0
     for i in range(qtt_scene.dim()):
         if (i + 1) % (N + 1) == 0:
-            idxs.append(frame)
+            idxs.append(int(frame_bits[bit_index]))
+            bit_index += 1
         else:
             idxs.append(slice(None))
 
