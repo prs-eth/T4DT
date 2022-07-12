@@ -2,10 +2,10 @@ data_dir: /scratch2/data/cape_release
 output_dir: /scratch2/projects/t4dt/logs/sweeps
 model: '00032'
 scene: longshort_flying_eagle
-experiment_name: qtt_00032_longshort_flying_eagle_high_ranks
+experiment_name: qtt_00032_longshort_flying_eagle_high_ranks_low_thr
 decomposition: QTT
 num_sample_points: 30000
 trunc_values: '[(-0.05, 0.05)]'
 max_inner_ranks: [400]
-tt_ranks: [400]
 rank_multiplier: 10
+tt_ranks: [400]

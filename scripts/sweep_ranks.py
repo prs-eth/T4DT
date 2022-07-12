@@ -33,6 +33,7 @@ parser.add('--num_sample_points', required=True, type=int, help='Number of point
 parser.add_argument('--trunc_values', type=eval, help='SDF limits for a sweep')
 parser.add_argument('--max_inner_ranks', type=int, nargs='+', help='Tucker ranks for a sweep')
 parser.add_argument('--tt_ranks', type=int, nargs='+', help='TT ranks for a sweep')
+parser.add_argument('--rank_multiplier', type=int, help='TT rank multiplier for stacked tensor')
 
 args = parser.parse_args()
 
@@ -67,12 +68,12 @@ for min_tsdf, max_tsdf in args.trunc_values:
         if args.decomposition == 'TT-Tucker':
             local_res_decomp = reduce_tucker(
                 [t[..., None] for t in local_res],
-                eps=EPS, algorithm='svd')
+                eps=EPS, rank=args.rank_multiplier * max_rank, algorithm='svd')
             preprocessing_fn = lambda x, i: x[..., i].torch()
         elif args.decomposition == 'TT':
             raise NotImplementedError()
         elif args.decomposition == 'QTT':
-            local_res_decomp = qtt_stack(local_res, eps=EPS)
+            local_res_decomp = qtt_stack(local_res, eps=EPS, rank=args.rank_multiplier * max_rank)
             preprocessing_fn = lambda x, i: qtt2tensor3d(get_qtt_frame(x, i).torch())
 
         result[(min_tsdf, max_tsdf)][max_rank]['compressed_frames'] = local_res

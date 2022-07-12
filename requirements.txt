@@ -3,7 +3,6 @@
 configargparse
 torch
 tntorch
-numba
 numpy
 tqdm
 trimesh
