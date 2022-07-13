@@ -8,3 +8,4 @@ num_sample_points: 30000
 trunc_values: '[(-0.005, 0.005)]'
 max_inner_ranks: [10, 20, 50, 100]
 tt_ranks: [4, 5, 10, 64, 284]
+rank_multiplier: 10

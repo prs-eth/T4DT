@@ -79,6 +79,8 @@ for min_tsdf, max_tsdf in args.trunc_values:
         result[(min_tsdf, max_tsdf)][max_rank]['compressed_frames'] = local_res
         local_res_tt = local_res_decomp.clone()
         ranks_tt = local_res_tt.ranks_tt
+
+        torch.save(result, osp.join(args.output_dir, f'{args.experiment_name}.pt'))
         for tt_rank in reversed(sorted(args.tt_ranks)):
             ranks_tt[-2] = tt_rank
             local_res_tt.round_tt(rmax=ranks_tt[1:-1])

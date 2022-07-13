@@ -60,12 +60,12 @@ def compute_metrics(
 
         tqdm.tqdm.write('Marching cube started')
         t0 = time.time()
-        mesh_pred = sdf2mesh(frame_pred, coords, res)
+        mesh_pred = sdf2mesh(frame_pred, coords)
         tqdm.tqdm.write(f'Marching cube finished. Took: {time.time() - t0} s.')
 
         tqdm.tqdm.write('Marching cube started')
         t0 = time.time()
-        mesh_gt = sdf2mesh(sdf, coords, res)
+        mesh_gt = sdf2mesh(sdf, coords)
         tqdm.tqdm.write(f'Marching cube finished. Took: {time.time() - t0} s.')
 
         tqdm.tqdm.write('Sampling points started')
