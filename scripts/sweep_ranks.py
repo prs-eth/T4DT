@@ -77,6 +77,7 @@ for min_tsdf, max_tsdf in args.trunc_values:
             preprocessing_fn = lambda x, i: qtt2tensor3d(get_qtt_frame(x, i).torch())
 
         result[(min_tsdf, max_tsdf)][max_rank]['compressed_frames'] = local_res
+        result[(min_tsdf, max_tsdf)][max_rank]['compressed_scene'] = local_res_decomp
         local_res_tt = local_res_decomp.clone()
         ranks_tt = local_res_tt.ranks_tt
 

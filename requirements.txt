@@ -1,5 +1,5 @@
 configargparse
-torch
+torch==1.11
 tntorch
 numpy
 tqdm
