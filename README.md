@@ -3,6 +3,10 @@
 Tenzorising 4D Visual Data (3D TSDFs + temporal component) for smaller footprint
 
 ## Build C++ extensions for MSDM2 metric
+First you need to make sure you have installed dependencies:
+1. CGAL
+2. boost
+
 ```
 cd src
 mkdir build
