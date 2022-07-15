@@ -31,7 +31,6 @@ def reduce(
 
 def reduce_tucker(
         ts: List[tn.Tensor],
-        round_f: Callable,
         function: Callable = partial(tn.cat, dim=-1),
         eps: float = 1e-14,
         rank: Optional[int] = None,

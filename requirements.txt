@@ -1,6 +1,6 @@
 configargparse
-torch==1.11
-tntorch
+torch==1.11.0+cu113
+git+https://github.com/rballester/tntorch@master#egg=tntorch
 numpy
 tqdm
 trimesh
