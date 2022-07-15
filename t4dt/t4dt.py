@@ -7,24 +7,9 @@ from typing import Callable, List, Optional
 from functools import partial
 
 
-def reduce_tucker(ts, eps, algorithm):
-    d = dict()
-    for i, elem in enumerate(ts):
-        climb = 0  # For going up the tree
-        while climb in d:
-            elem = tn.round_tucker(tn.cat([d[climb], elem], dim=-1), eps=eps, algorithm=algorithm)
-            d.pop(climb)
-            climb += 1
-        d[climb] = elem
-    keys = list(d.keys())
-    result = d[keys[0]]
-    for key in keys[1:]:
-        result = tn.round_tucker(tn.cat([result, d[key]], dim=-1), eps=eps, algorithm=algorithm)
-    return result
-
-
-def reduce_tt(
+def reduce(
         ts: List[tn.Tensor],
+        round_f: Callable,
         function: Callable = partial(tn.cat, dim=-1),
         eps: float = 1e-14,
         rank: Optional[int] = None,
@@ -33,15 +18,34 @@ def reduce_tt(
     for i, elem in enumerate(ts):
         climb = 0  # For going up the tree
         while climb in d:
-            elem = tn.round_tt(function(d[climb], elem), rmax=rank, eps=eps, algorithm=algorithm)
+            elem = round_f(function(d[climb], elem), rmax=rank, eps=eps, algorithm=algorithm)
             d.pop(climb)
             climb += 1
         d[climb] = elem
     keys = list(d.keys())
     result = d[keys[0]]
     for key in keys[1:]:
-        result = tn.round_tt(function(result, d[key]), rmax=rank, eps=eps, algorithm=algorithm)
+        result = round_f(function(result, d[key]), rmax=rank, eps=eps, algorithm=algorithm)
     return result
+
+
+def reduce_tucker(
+        ts: List[tn.Tensor],
+        round_f: Callable,
+        function: Callable = partial(tn.cat, dim=-1),
+        eps: float = 1e-14,
+        rank: Optional[int] = None,
+        algorithm: str = 'svd'):
+    return reduce(ts, tn.round_tucker, function, eps, rank, algorithm)
+
+
+def reduce_tt(
+        ts: List[tn.Tensor],
+        function: Callable = partial(tn.cat, dim=-1),
+        eps: float = 1e-14,
+        rank: Optional[int] = None,
+        algorithm: str = 'svd'):
+    return reduce(ts, tn.round_tt, function, eps, rank, algorithm)
 
 
 def is_pow2(n: int) -> bool:
@@ -85,11 +89,11 @@ def qtt2tensor3d(qtt: torch.Tensor, checks: bool = True) -> torch.Tensor:
 
 
 def qtt_stack(
-    ts: List[tn.Tensor],
-    N: int = 3,
-    eps: Optional[float] = None,
-    rank: Optional[int] = None,
-    algorithm: str = 'svd'):
+        ts: List[tn.Tensor],
+        N: int = 3,
+        eps: Optional[float] = None,
+        rank: Optional[int] = None,
+        algorithm: str = 'svd'):
     '''
     Given a list of K tensors (shape (2^L)^N each) represented in the QTT format (shape 2^(N * L)),
     stack them along a new dimension that is interleaved with their original dimensions.
@@ -120,6 +124,9 @@ def qtt_stack(
 
 
 def get_qtt_frame(qtt_scene: tn.Tensor, frame: int, N: int = 3):
+    '''
+    Extract a single qtt frame from a compressed qtt scene
+    '''
     idxs = []
     frame_bits = np.binary_repr(frame, qtt_scene.dim() // (N + 1))
     bit_index = 0
