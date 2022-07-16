@@ -71,7 +71,10 @@ for min_tsdf, max_tsdf in args.trunc_values:
                 eps=EPS, rank=args.rank_multiplier * max_rank, algorithm='svd')
             preprocessing_fn = lambda x, i: x[..., i].torch()
         elif args.decomposition == 'TT':
-            raise NotImplementedError()
+            local_res_decomp = reduce_tt(
+                [t[..., None] for t in local_res],
+                eps=EPS, rank=args.rank_multiplier * max_rank, algorithm='svd')
+            preprocessing_fn = lambda x, i: x[..., i].torch()
         elif args.decomposition == 'QTT':
             local_res_decomp = qtt_stack(local_res, eps=EPS, rank=args.rank_multiplier * max_rank)
             preprocessing_fn = lambda x, i: qtt2tensor3d(get_qtt_frame(x, i).torch())
