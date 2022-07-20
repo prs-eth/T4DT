@@ -58,7 +58,7 @@ for min_tsdf, max_tsdf in args.trunc_values:
 
     for frame in tqdm.tqdm(frames):
         sdf = torch.load(osp.join(args.data_dir, 'meshes', args.model, args.scene, 'posed', frame))['sdf']
-        tsdf = sdf.clamp_min(min_tsdf).clamp_max(max_tsdf)
+        tsdf = sdf.clamp_min(min_tsdf).clamp_max(max_tsdf).double()
         if args.decomposition == 'TT':
             local_frames.append(tn.Tensor(tsdf, ranks_tt=max_rank))
         elif args.decomposition in ['Tucker', 'TT-Tucker']:
@@ -66,18 +66,22 @@ for min_tsdf, max_tsdf in args.trunc_values:
         elif args.decomposition == 'QTT':
             local_frames.append(tn.Tensor(tensor3d2qtt(tsdf), ranks_tt=max_rank))
 
+    res = torch.tensor(sdf.shape)
+    T = len(frames)
+    largest_dim = max(res.max(), T)
+    outer_rank = min(args.rank_multiplier * max_rank, largest_dim)
     if args.decomposition == 'TT-Tucker':
         res_decomp = reduce_tucker(
             [t[..., None] for t in local_frames],
-            eps=EPS, rank=args.rank_multiplier * max_rank, algorithm='eig')
+            eps=EPS, rank=outer_rank, algorithm='eig')
         preprocessing_fn = lambda x, i: x[..., i].torch()
     elif args.decomposition == 'TT':
         res_decomp = reduce_tt(
             [t[..., None] for t in local_frames],
-            eps=EPS, rank=args.rank_multiplier * max_rank, algorithm='eig')
+            eps=EPS, rank=outer_rank, algorithm='eig')
         preprocessing_fn = lambda x, i: x[..., i].torch()
     elif args.decomposition == 'QTT':
-        res_decomp = qtt_stack(local_frames, eps=EPS, rank=args.rank_multiplier * max_rank, algorithm='eig')
+        res_decomp = qtt_stack(local_frames, eps=EPS, rank=outer_rank, algorithm='eig')
         preprocessing_fn = lambda x, i: qtt2tensor3d(get_qtt_frame(x, i).torch())
 
     result[(min_tsdf, max_tsdf)][max_rank]['compressed_frames'] = local_frames
@@ -93,14 +97,14 @@ for min_tsdf, max_tsdf in args.trunc_values:
             ranks_tucker = local_res_tt.ranks_tucker.clone()
             if args.decomposition == 'TT-Tucker':
                 assert len(ranks_tt) == 5 and len(ranks_tucker) == 4
-                ranks_tucker[0:3] = rank
+                ranks_tucker[0:3] = min(largest_dim, rank)
                 local_res_tt.round_tucker(rmax=ranks_tucker, algorithm='eig')
-                ranks_tt[3] = tt_rank
+                ranks_tt[3] = min(largest_dim, tt_rank)
                 local_res_tt.round_tt(rmax=ranks_tt[1:-1], algorithm='eig')
             elif args.decomposition == 'TT':
                 assert len(ranks_tt) == 5
-                ranks_tt[1:3] = rank
-                ranks_tt[3] = tt_rank
+                ranks_tt[1:3] = min(largest_dim, rank)
+                ranks_tt[3] = min(largest_dim, tt_rank)
                 local_res_tt.round_tt(rmax=ranks_tt[1:-1], algorithm='eig')
             elif args.decomposition == 'QTT':
                 # NOTE: ranks adjacent to time qtt dims
