@@ -4,6 +4,7 @@ import skimage
 import trimesh
 import numba
 import numpy as np
+from pysdf import SDF
 from typing import List
 
 def sdf2mesh(sdf: torch.Tensor, coords: torch.Tensor) -> trimesh.base.Trimesh:
@@ -111,3 +112,25 @@ def find_surface_adjacent_voxels(sdf: torch.Tensor, batch_size: int = 32368) -> 
         if idxs.any():
             result.append(pp[idxs][..., 0])
     return torch.cat(result) if result else torch.zeros((0, 3))
+
+
+def build_sdf_scene_reader(scene_path: str, scene_prefix: str, coords: torch.Tensor, resolution: int) -> Callable:
+    def f(coords: torch.Tensor) -> torch.Tensor:
+        '''
+        SDF samples at coords
+
+        :param coords: coordinates tensor with [frame_id, x, y, z] entries
+        :return: torch.Tensor
+        '''
+        frames = coords[:, 0].long()
+        assert torch.allclose(frames, coords[:, 0]), 'frame IDs must be integer'
+        result = torch.zeros(frames.shape[0])
+        for frame in frames.unique():
+            input_name = osp.join(scene_path, scene_prefix + f'{frame:03}.pt')
+            mesh = trimesh.load(input_name)
+            sdf = SDF(mesh.vertices, mesh.faces)
+            result[frames == frame] = sdf(coords[frames == frame][:, 1:])
+        
+        return torch.cat(result)
+
+    return f

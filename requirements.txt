@@ -6,7 +6,7 @@ tqdm
 trimesh
 pysdf
 pyvista
-ipygany
+pythreejs
 scikit-image
 git+https://github.com/NVIDIAGameWorks/kaolin@master#egg=kaolin
 git+https://github.com/libigl/libigl-python-bindings.git@master#egg=igl

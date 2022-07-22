@@ -66,10 +66,11 @@ for min_tsdf, max_tsdf in args.trunc_values:
         elif args.decomposition == 'QTT':
             local_frames.append(tn.Tensor(tensor3d2qtt(tsdf), ranks_tt=max_rank))
 
-    res = torch.tensor(sdf.shape)
+    res = torch.tensor(local_frames[-1].shape)
     T = len(frames)
-    largest_dim = max(res.max(), T)
+    largest_dim = max(res.max().item(), T)
     outer_rank = min(args.rank_multiplier * max_rank, largest_dim)
+
     if args.decomposition == 'TT-Tucker':
         res_decomp = reduce_tucker(
             [t[..., None] for t in local_frames],

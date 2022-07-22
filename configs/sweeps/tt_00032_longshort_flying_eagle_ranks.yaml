@@ -6,6 +6,6 @@ experiment_name: tt_00032_longshort_flying_eagle_ranks
 decomposition: TT
 num_sample_points: 30000
 trunc_values: '[(-0.05, 0.05)]'
-max_inner_ranks: [120, 64, 32, 16, 8]
-tt_ranks: [284, 128, 100, 50, 20, 10]
-rank_multiplier: 10
+max_inner_ranks: [64, 32, 16, 8]
+tt_ranks: [128, 100, 50, 20, 10]
+rank_multiplier: 2

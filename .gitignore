@@ -3,3 +3,4 @@ logs
 src/build
 *.pyc
 .ipynb_checkpoints
+imgs

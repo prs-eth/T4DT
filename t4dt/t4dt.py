@@ -71,6 +71,17 @@ def tensor3d2qtt(t: torch.Tensor, checks: bool = True) -> torch.Tensor:
     return qtt
 
 
+def tensor3d2oqtt(t: torch.Tensor, checks: bool = True) -> torch.Tensor:
+    oqtt = tensor3d2qtt(t, checks)
+    oqtt = oqtt.reshape([8] * len(oqtt.shape) // 3)
+    return oqtt
+
+
+def oqtt2tensor3d(oqtt: torch.Tensor, checks: bool = True) -> torch.Tensor:
+    qtt = oqtt.reshape([2] * len(oqtt.shape) * 3)
+    return qtt2tensor3d(qtt, checks)
+
+
 def qtt2tensor3d(qtt: torch.Tensor, checks: bool = True) -> torch.Tensor:
     shape = qtt.shape
     if checks:
@@ -127,7 +138,23 @@ def get_qtt_frame(qtt_scene: tn.Tensor, frame: int, N: int = 3):
     Extract a single qtt frame from a compressed qtt scene
     '''
     idxs = []
-    frame_bits = np.binary_repr(frame, qtt_scene.dim() // (N + 1))
+    frame_bits = np.binary_repr(frame, qtt_scene.dim() // (N + 1))[::-1]
+    bit_index = 0
+    for i in range(qtt_scene.dim()):
+        if (i + 1) % (N + 1) == 0:
+            idxs.append(int(frame_bits[bit_index]))
+            bit_index += 1
+        else:
+            idxs.append(slice(None))
+
+    return qtt_scene[idxs]
+
+def get_oqtt_frame(oqtt_scene: tn.Tensor, frame: int, N: int = 3):
+    '''
+    Extract a single oqtt frame from a compressed oqtt scene
+    '''
+    idxs = []
+    frame_bits = np.binary_repr(frame, qtt_scene.dim() // (N + 1))[::-1]
     bit_index = 0
     for i in range(qtt_scene.dim()):
         if (i + 1) % (N + 1) == 0:
