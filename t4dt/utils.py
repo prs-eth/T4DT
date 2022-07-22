@@ -114,7 +114,7 @@ def find_surface_adjacent_voxels(sdf: torch.Tensor, batch_size: int = 32368) -> 
     return torch.cat(result) if result else torch.zeros((0, 3))
 
 
-def build_sdf_scene_reader(scene_path: str, scene_prefix: str, coords: torch.Tensor, resolution: int) -> Callable:
+def build_sdf_scene_reader(scene_path: str, scene_prefix: str, coords: torch.Tensor) -> Callable:
     def f(coords: torch.Tensor) -> torch.Tensor:
         '''
         SDF samples at coords
