@@ -5,7 +5,7 @@ import trimesh
 import numba
 import numpy as np
 from pysdf import SDF
-from typing import List
+from typing import Callable, List
 
 def sdf2mesh(sdf: torch.Tensor, coords: torch.Tensor) -> trimesh.base.Trimesh:
     '''

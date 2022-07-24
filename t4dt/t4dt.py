@@ -13,7 +13,7 @@ def reduce(
         function: Callable = partial(tn.cat, dim=-1),
         eps: float = 1e-14,
         rank: Optional[int] = None,
-        algorithm: str = 'svd'):
+        algorithm: str = 'svd') -> tn.Tensor:
     d = dict()
     for i, elem in enumerate(ts):
         climb = 0  # For going up the tree
@@ -34,7 +34,7 @@ def reduce_tucker(
         function: Callable = partial(tn.cat, dim=-1),
         eps: float = 1e-14,
         rank: Optional[int] = None,
-        algorithm: str = 'svd'):
+        algorithm: str = 'svd') -> tn.Tensor:
     return reduce(ts, tn.round_tucker, function, eps, rank, algorithm)
 
 
@@ -43,7 +43,7 @@ def reduce_tt(
         function: Callable = partial(tn.cat, dim=-1),
         eps: float = 1e-14,
         rank: Optional[int] = None,
-        algorithm: str = 'svd'):
+        algorithm: str = 'svd') -> tn.Tensor:
     return reduce(ts, tn.round_tt, function, eps, rank, algorithm)
 
 
@@ -73,7 +73,7 @@ def tensor3d2qtt(t: torch.Tensor, checks: bool = True) -> torch.Tensor:
 
 def tensor3d2oqtt(t: torch.Tensor, checks: bool = True) -> torch.Tensor:
     oqtt = tensor3d2qtt(t, checks)
-    oqtt = oqtt.reshape([8] * len(oqtt.shape) // 3)
+    oqtt = oqtt.reshape([8] * (len(oqtt.shape) // 3))
     return oqtt
 
 
@@ -103,19 +103,19 @@ def qtt_stack(
         N: int = 3,
         eps: Optional[float] = None,
         rank: Optional[int] = None,
-        algorithm: str = 'svd'):
+        algorithm: str = 'svd') -> tn.Tensor:
     '''
     Given a list of K tensors (shape (2^L)^N each) represented in the QTT format (shape 2^(N * L)),
     stack them along a new dimension that is interleaved with their original dimensions.
 
     :param ts: list of QTT's (`tntorch.Tensor`), each of shape 2^(N * L)
     :param N: number of spatial dimensions (default is 3)
-    :param rmax: maximal rank of the stacked result
+    :param eps: eps to figure out the rank to truncate the stacked result
+    :param rank: rank to truncate the stacked result
     :param algorithm: eig or svd (default)
     :return: a `tntorch.Tensor` of shape 2^((N + 1) * L)
     '''
     assert all([t.shape == ts[0].shape for t in ts[1:]])
-    assert min(ts[0].shape) == max(ts[0].shape) == 2
     L = ts[0].dim() // N
     assert int(np.ceil(np.log2(len(ts)))) <= L
 
@@ -133,25 +133,14 @@ def qtt_stack(
     return reduce_tt(output_ts, operator.add, eps=eps, rank=rank, algorithm=algorithm)
 
 
-def get_qtt_frame(qtt_scene: tn.Tensor, frame: int, N: int = 3):
+def get_qtt_frame(qtt_scene: tn.Tensor, frame: int, N: int = 3) -> tn.Tensor:
     '''
     Extract a single qtt frame from a compressed qtt scene
-    '''
-    idxs = []
-    frame_bits = np.binary_repr(frame, qtt_scene.dim() // (N + 1))[::-1]
-    bit_index = 0
-    for i in range(qtt_scene.dim()):
-        if (i + 1) % (N + 1) == 0:
-            idxs.append(int(frame_bits[bit_index]))
-            bit_index += 1
-        else:
-            idxs.append(slice(None))
 
-    return qtt_scene[idxs]
-
-def get_oqtt_frame(oqtt_scene: tn.Tensor, frame: int, N: int = 3):
-    '''
-    Extract a single oqtt frame from a compressed oqtt scene
+    :param qtt_scene: scene stored in qtt format
+    :param frame: frame index in the scene
+    :param number of spatial dimensions in qtt
+    :return: tn.Tensor with a frame in qtt format
     '''
     idxs = []
     frame_bits = np.binary_repr(frame, qtt_scene.dim() // (N + 1))[::-1]

@@ -9,7 +9,8 @@ import tntorch as tn
 import yaml
 
 sys.path.append(osp.join(os.path.abspath(os.getcwd()), '..',))
-from t4dt.t4dt import reduce_tucker, reduce_tt, tensor3d2qtt, qtt2tensor3d, qtt_stack, get_qtt_frame
+from t4dt.t4dt import reduce_tucker, reduce_tt, tensor3d2qtt, tensor3d2oqtt, qtt_stack
+from t4dt.t4dt import oqtt2tensor3d, qtt2tensor3d, get_qtt_frame
 from t4dt.metrics import compute_metrics
 
 torch.set_default_dtype(torch.float64)
@@ -29,7 +30,7 @@ parser.add('--output_dir', required=True, type=str, help='Dirrectory for output'
 parser.add('--model', required=True, type=str, help='Name of the model')
 parser.add('--scene', required=True, type=str, help='Name of the scene')
 
-parser.add('--decomposition', required=True, choices=['TT', 'QTT', 'TT-Tucker'], help='TT, TT-Tucker or QTT')
+parser.add('--decomposition', required=True, choices=['TT', 'QTT', 'OQTT','TT-Tucker'], help='TT, TT-Tucker, OQTT or QTT')
 parser.add('--num_sample_points', required=True, type=int, help='Number of points to compute IoU')
 
 parser.add_argument('--trunc_values', type=eval, help='SDF limits for a sweep')
@@ -65,6 +66,8 @@ for min_tsdf, max_tsdf in args.trunc_values:
             local_frames.append(tn.Tensor(tsdf, ranks_tucker=max_rank))
         elif args.decomposition == 'QTT':
             local_frames.append(tn.Tensor(tensor3d2qtt(tsdf), ranks_tt=max_rank))
+        elif args.decomposition == 'OQTT':
+            local_frames.append(tn.Tensor(tensor3d2oqtt(tsdf), ranks_tt=max_rank))
 
     res = torch.tensor(local_frames[-1].shape)
     T = len(frames)
@@ -84,6 +87,9 @@ for min_tsdf, max_tsdf in args.trunc_values:
     elif args.decomposition == 'QTT':
         res_decomp = qtt_stack(local_frames, eps=EPS, rank=outer_rank, algorithm='eig')
         preprocessing_fn = lambda x, i: qtt2tensor3d(get_qtt_frame(x, i).torch())
+    elif args.decomposition == 'OQTT':
+        res_decomp = qtt_stack(local_frames, N=1, eps=EPS, rank=outer_rank, algorithm='eig')
+        preprocessing_fn = lambda x, i: oqtt2tensor3d(get_qtt_frame(x, i, N=1).torch())
 
     result[(min_tsdf, max_tsdf)][max_rank]['compressed_frames'] = local_frames
     result[(min_tsdf, max_tsdf)][max_rank]['compressed_scene'] = res_decomp
@@ -116,7 +122,18 @@ for min_tsdf, max_tsdf in args.trunc_values:
                 ranks_tt[3::4] = torch.where(ranks_tt[3::4] < tt_rank, ranks_tt[3::4], tt_rank)
                 ranks_tt[4::4] = torch.where(ranks_tt[4::4] < tt_rank, ranks_tt[4::4], tt_rank)
                 # NOTE: x, y, z qtt ranks
-                ranks_tt[mask] = torch.where(ranks_tt[mask] < rank, ranks_tt[mask], ranks)
+                ranks_tt[mask] = torch.where(ranks_tt[mask] < tt_rank, ranks_tt[mask], tt_rank)
+                local_res_tt.round_tt(rmax=ranks_tt[1:-1], algorithm='eig')
+            elif args.decomposition == 'OQTT':
+                # NOTE: ranks adjacent to time oqtt dims
+                idxs = torch.arange(len(ranks_tt))
+                mask = torch.ones(len(ranks_tt)).bool()
+                mask[idxs[1::2]] = False
+                mask[idxs[2::2]] = False
+                ranks_tt[1::2] = torch.where(ranks_tt[1::2] < tt_rank, ranks_tt[1::2], tt_rank)
+                ranks_tt[2::2] = torch.where(ranks_tt[2::2] < tt_rank, ranks_tt[2::2], tt_rank)
+                # NOTE: x, y, z qtt ranks
+                ranks_tt[mask] = torch.where(ranks_tt[mask] < tt_rank, ranks_tt[mask], tt_rank)
                 local_res_tt.round_tt(rmax=ranks_tt[1:-1], algorithm='eig')
 
             result[(min_tsdf, max_tsdf)][rank][tt_rank] = {
