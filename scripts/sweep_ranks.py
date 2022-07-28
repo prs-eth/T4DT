@@ -15,7 +15,7 @@ from t4dt.metrics import compute_metrics
 
 torch.set_default_dtype(torch.float64)
 
-EPS = 1e-5 # NOTE: used for TT
+EPS = 1e-4 # NOTE: used for TT
 
 parser = configargparse.ArgumentParser(
     config_file_parser_class=configargparse.YAMLConfigFileParser,
@@ -88,7 +88,7 @@ for min_tsdf, max_tsdf in args.trunc_values:
         res_decomp = qtt_stack(local_frames, eps=EPS, rank=outer_rank, algorithm='eig')
         preprocessing_fn = lambda x, i: qtt2tensor3d(get_qtt_frame(x, i).torch())
     elif args.decomposition == 'OQTT':
-        res_decomp = qtt_stack(local_frames, N=1, eps=EPS, rank=outer_rank, algorithm='eig')
+        res_decomp = qtt_stack(local_frames, N=1, eps=EPS, rank=args.rank_multiplier * outer_rank, algorithm='eig')
         preprocessing_fn = lambda x, i: oqtt2tensor3d(get_qtt_frame(x, i, N=1).torch())
 
     result[(min_tsdf, max_tsdf)][max_rank]['compressed_frames'] = local_frames
@@ -96,7 +96,8 @@ for min_tsdf, max_tsdf in args.trunc_values:
     local_res_decomp = res_decomp.clone()
 
     for rank in reversed(sorted(args.max_inner_ranks)):
-        result[(min_tsdf, max_tsdf)][rank] = {}
+        if rank not in result[(min_tsdf, max_tsdf)]:
+            result[(min_tsdf, max_tsdf)][rank] = {}
         local_res_tt = local_res_decomp.clone()
 
         for tt_rank in reversed(sorted(args.tt_ranks)):
@@ -122,7 +123,7 @@ for min_tsdf, max_tsdf in args.trunc_values:
                 ranks_tt[3::4] = torch.where(ranks_tt[3::4] < tt_rank, ranks_tt[3::4], tt_rank)
                 ranks_tt[4::4] = torch.where(ranks_tt[4::4] < tt_rank, ranks_tt[4::4], tt_rank)
                 # NOTE: x, y, z qtt ranks
-                ranks_tt[mask] = torch.where(ranks_tt[mask] < tt_rank, ranks_tt[mask], tt_rank)
+                ranks_tt[mask] = torch.where(ranks_tt[mask] < rank, ranks_tt[mask], rank)
                 local_res_tt.round_tt(rmax=ranks_tt[1:-1], algorithm='eig')
             elif args.decomposition == 'OQTT':
                 # NOTE: ranks adjacent to time oqtt dims
@@ -133,7 +134,7 @@ for min_tsdf, max_tsdf in args.trunc_values:
                 ranks_tt[1::2] = torch.where(ranks_tt[1::2] < tt_rank, ranks_tt[1::2], tt_rank)
                 ranks_tt[2::2] = torch.where(ranks_tt[2::2] < tt_rank, ranks_tt[2::2], tt_rank)
                 # NOTE: x, y, z qtt ranks
-                ranks_tt[mask] = torch.where(ranks_tt[mask] < tt_rank, ranks_tt[mask], tt_rank)
+                ranks_tt[mask] = torch.where(ranks_tt[mask] < rank, ranks_tt[mask], rank)
                 local_res_tt.round_tt(rmax=ranks_tt[1:-1], algorithm='eig')
 
             result[(min_tsdf, max_tsdf)][rank][tt_rank] = {

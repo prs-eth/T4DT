@@ -1,0 +1,10 @@
+data_dir: /scratch2/data/ana
+output_dir: /scratch2/projects/t4dt/logs/sweeps
+scene: handstand
+experiment_name: oqtt_handstand_ranks
+decomposition: OQTT
+num_sample_points: 30000
+trunc_values: '[(-0.05, 0.05)]'
+max_inner_ranks: [400]
+tt_ranks: [4000, 1800, 400]
+rank_multiplier: 10

@@ -22,6 +22,8 @@ def sdf2mesh(sdf: torch.Tensor, coords: torch.Tensor) -> trimesh.base.Trimesh:
 
     vertices = torch.tensor(vertices.copy())
     faces = torch.tensor(faces.copy())
+
+    # NOTE: process=False required for the correct work of MSDM2 
     return trimesh.base.Trimesh(vertices=vertices, faces=faces, process=False)
 
 

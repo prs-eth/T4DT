@@ -4,3 +4,4 @@ src/build
 *.pyc
 .ipynb_checkpoints
 imgs
+*.pt
