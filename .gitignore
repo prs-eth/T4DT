@@ -1,4 +1,5 @@
 info
+scenes
 logs
 src/build
 *.pyc
