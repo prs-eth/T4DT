@@ -103,6 +103,7 @@ def qtt_stack(
         N: int = 3,
         eps: Optional[float] = None,
         rank: Optional[int] = None,
+        lsb_left: bool = True,
         algorithm: str = 'svd') -> tn.Tensor:
     '''
     Given a list of K tensors (shape (2^L)^N each) represented in the QTT format (shape 2^(N * L)),
@@ -126,14 +127,17 @@ def qtt_stack(
     for i in range(len(ts)):
         t = tn.unsqueeze(ts[i], dim=range(N, L * (N + 1) + 1, N + 1))
         t = t.repeat(*([1] * N + [2]) * L)
-        # NOTE: We will put least-signficant bits towards the left
+
         for l in range(L):
-            t.cores[(l + 1) * (N + 1) - 1][:, int((i & (1 << l)) == 0), :] = 0
+            if lsb_left:
+                t.cores[(l + 1) * (N + 1) - 1][:, int((i & (1 << l)) == 0), :] = 0
+            else:
+                t.cores[(l + 1) * (N + 1) - 1][:, int((i & (1 << (L - l - 1))) == 0), :] = 0
         output_ts.append(t)
     return reduce_tt(output_ts, operator.add, eps=eps, rank=rank, algorithm=algorithm)
 
 
-def get_qtt_frame(qtt_scene: tn.Tensor, frame: int, N: int = 3) -> tn.Tensor:
+def get_qtt_frame(qtt_scene: tn.Tensor, frame: int, N: int = 3, lsb_left: bool = True) -> tn.Tensor:
     '''
     Extract a single qtt frame from a compressed qtt scene
 
@@ -143,7 +147,9 @@ def get_qtt_frame(qtt_scene: tn.Tensor, frame: int, N: int = 3) -> tn.Tensor:
     :return: tn.Tensor with a frame in qtt format
     '''
     idxs = []
-    frame_bits = np.binary_repr(frame, qtt_scene.dim() // (N + 1))[::-1]
+    frame_bits = np.binary_repr(frame, qtt_scene.dim() // (N + 1))
+    if lsb_left:
+        frame_bits = frame_bits[::-1]
     bit_index = 0
     for i in range(qtt_scene.dim()):
         if (i + 1) % (N + 1) == 0:
